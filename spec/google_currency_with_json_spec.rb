@@ -39,6 +39,21 @@ describe "GoogleCurrency" do
 
       @bank.get_rate('VND', 'USD').should == BigDecimal("0.48215105E1")
     end
+
+    it "should use #flush_rate when last_update rate is more than 12 hours" do
+      @bank.get_rate('USD', 'EUR')
+      @bank.last_updated['USD_TO_EUR'] = Time.now - (3600 * 13)
+      @bank.should_receive(:flush_rate).once
+      @bank.get_rate('USD', 'EUR')
+    end
+
+    it "should not use #flush_rate when last_update rate is less than 12 hours" do
+      @bank.get_rate('USD', 'EUR')
+      @bank.last_updated['USD_TO_EUR'] = Time.now - (3600 * 2)
+      @bank.should_not_receive(:flush_rate)
+      @bank.get_rate('USD', 'EUR')
+    end
+
   end
 
   describe "#flush_rates" do

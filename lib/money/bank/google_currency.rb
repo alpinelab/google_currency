@@ -11,7 +11,12 @@ class Money
 
       # @return [Hash] Stores the currently known rates.
       attr_reader :rates
+      attr_reader :last_updated
 
+      def initialize
+        @last_updated = {}
+        super
+      end
       ##
       # Clears all rates stored in @rates
       #
@@ -22,7 +27,9 @@ class Money
       #   @bank.get_rate(:USD, :EUR)  #=> 0.776337241
       #   @bank.flush_rates           #=> {}
       def flush_rates
+        puts "FLUSH"
         @mutex.synchronize{
+          @last_updated = {}
           @rates = {}
         }
       end
@@ -42,8 +49,10 @@ class Money
       #   @bank.get_rate(:USD, :EUR)    #=> 0.776337241
       #   @bank.flush_rate(:USD, :EUR)  #=> 0.776337241
       def flush_rate(from, to)
+        puts "FLUSH"
         key = rate_key_for(from, to)
         @mutex.synchronize{
+          @last_updated.delete(key)
           @rates.delete(key)
         }
       end
@@ -60,6 +69,7 @@ class Money
       #   @bank = GoogleCurrency.new  #=> <Money::Bank::GoogleCurrency...>
       #   @bank.get_rate(:USD, :EUR)  #=> 0.776337241
       def get_rate(from, to)
+        flush_rate(from, to) if @last_updated[rate_key_for(from, to)] and @last_updated[rate_key_for(from, to)] < Time.now - (10)
         @mutex.synchronize{
           @rates[rate_key_for(from, to)] ||= fetch_rate(from, to)
         }
@@ -82,6 +92,7 @@ class Money
 
         error = data['error']
         raise UnknownRate unless error == '' || error == '0'
+        @last_updated[rate_key_for(from, to)] = Time.now
         decode_rate data['rhs']
       end
 
