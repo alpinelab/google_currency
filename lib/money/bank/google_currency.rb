@@ -49,7 +49,6 @@ class Money
       #   @bank.get_rate(:USD, :EUR)    #=> 0.776337241
       #   @bank.flush_rate(:USD, :EUR)  #=> 0.776337241
       def flush_rate(from, to)
-        puts "FLUSH"
         key = rate_key_for(from, to)
         @mutex.synchronize{
           @last_updated.delete(key)
@@ -69,7 +68,7 @@ class Money
       #   @bank = GoogleCurrency.new  #=> <Money::Bank::GoogleCurrency...>
       #   @bank.get_rate(:USD, :EUR)  #=> 0.776337241
       def get_rate(from, to)
-        flush_rate(from, to) if @last_updated[rate_key_for(from, to)] and @last_updated[rate_key_for(from, to)] < Time.now - (10)
+        flush_rate(from, to) if @last_updated[rate_key_for(from, to)] and @last_updated[rate_key_for(from, to)] < Time.now - (3600 * 12)
         @mutex.synchronize{
           @rates[rate_key_for(from, to)] ||= fetch_rate(from, to)
         }
